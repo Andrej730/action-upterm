@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import * as io from '@actions/io';
 import * as tc from '@actions/tool-cache';
 import {execShellCommand, launchOutsideJobObject, sleep} from './helpers';
 
@@ -255,7 +256,16 @@ async function installDependencies(): Promise<void> {
       }
 
       core.addPath(extractDir);
-      await execShellCommand('if ! command -v tmux &>/dev/null; then sudo apt-get update && sudo apt-get -y install tmux; fi');
+
+      if (!(await io.which('tmux', false))) {
+        if (await io.which('apt-get', false)) {
+          await execShellCommand('sudo apt-get update && sudo apt-get -y install tmux');
+        } else if (await io.which('dnf', false)) {
+          await execShellCommand('sudo dnf install -y tmux');
+        } else {
+          throw new Error('No supported package manager found to install tmux (checked apt-get, dnf)');
+        }
+      }
     },
     win32: async () => {
       const archiveUrl = getUptermDownloadUrl('win32', process.arch);
