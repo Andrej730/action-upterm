@@ -258,10 +258,13 @@ async function installDependencies(): Promise<void> {
       core.addPath(extractDir);
 
       if (!(await io.which('tmux', false))) {
+        // Some containers run as root and have no sudo binary at all.
+        const sudoPrefix = (await io.which('sudo', false)) ? 'sudo ' : '';
+
         if (await io.which('apt-get', false)) {
-          await execShellCommand('sudo apt-get update && sudo apt-get -y install tmux');
+          await execShellCommand(`${sudoPrefix}apt-get update && ${sudoPrefix}apt-get -y install tmux`);
         } else if (await io.which('dnf', false)) {
-          await execShellCommand('sudo dnf install -y tmux');
+          await execShellCommand(`${sudoPrefix}dnf install -y tmux`);
         } else {
           throw new Error('No supported package manager found to install tmux (checked apt-get, dnf)');
         }
