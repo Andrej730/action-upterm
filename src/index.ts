@@ -711,14 +711,45 @@ function getUptermSocketDir(): string {
   return path.join(getUptermDirs().runtime, 'upterm');
 }
 
+/**
+ * Recursively search a directory for the first file matching a predicate,
+ * up to a bounded depth. Used to find the upterm admin socket, which newer
+ * upterm versions nest under a per-session subdirectory (e.g.
+ * upterm/sessions/<id>/*.sock) instead of placing directly in the upterm dir.
+ */
+function findFileRecursive(dir: string, predicate: (name: string) => boolean, maxDepth: number): string | null {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dir, {withFileTypes: true});
+  } catch {
+    return null;
+  }
+
+  for (const entry of entries) {
+    if (entry.isFile() && predicate(entry.name)) {
+      return path.join(dir, entry.name);
+    }
+  }
+
+  if (maxDepth <= 0) return null;
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const found = findFileRecursive(path.join(dir, entry.name), predicate, maxDepth - 1);
+    if (found) return found;
+  }
+
+  return null;
+}
+
 function findUptermSocket(): string | null {
   const uptermDir = getUptermSocketDir();
   if (!fs.existsSync(uptermDir)) return null;
 
-  const socketFile = fs.readdirSync(uptermDir).find(file => file.endsWith('.sock'));
-  if (!socketFile) return null;
+  const socketPath = findFileRecursive(uptermDir, name => name.endsWith('.sock'), 3);
+  if (!socketPath) return null;
 
-  return toShellPath(path.join(uptermDir, socketFile));
+  return toShellPath(socketPath);
 }
 
 function uptermSocketExists(): boolean {
