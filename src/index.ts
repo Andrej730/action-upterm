@@ -11,7 +11,7 @@ import {execShellCommand, launchOutsideJobObject, sleep} from './helpers';
 // Constants
 const UPTERM_RELEASE_BASE_URL = 'https://github.com/owenthereal/upterm/releases';
 const UPTERM_SOCKET_POLL_INTERVAL = 1000;
-const UPTERM_READY_MAX_RETRIES = 10;
+const UPTERM_READY_MAX_RETRIES = 30;
 const SESSION_STATUS_POLL_INTERVAL = 5000;
 const SUPPORTED_UPTERM_ARCHITECTURES = ['amd64', 'arm64'] as const;
 const TMUX_DIMENSIONS = {width: 132, height: 43};
